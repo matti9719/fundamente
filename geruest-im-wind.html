@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gerüst im Wind</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --panel: rgba(16,24,40,.86);
+  --panel-edge: rgba(255,255,255,.10);
+  --ink: #e8edf4;
+  --ink-dim: #9aa7ba;
+  --signal: #f2c230;
+  --signal-ink: #1a1405;
+  --ok: #5fe0a0;
+  --bad: #ff6b5e;
+  --field: rgba(255,255,255,.06);
+  --page: #0e1626;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --panel: rgba(12,18,31,.88);
+    --page: #0a111e;
+  }
+}
+:root[data-theme="dark"]{ --panel: rgba(12,18,31,.88); --page:#0a111e; }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--page);color:var(--ink);
+  font-family:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;overflow:hidden}
+header{height:52px;display:flex;align-items:center;gap:18px;padding:0 16px;
+  background:var(--page);border-bottom:1px solid var(--panel-edge)}
+h1{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;font-size:24px;margin:0;letter-spacing:.2px;white-space:nowrap}
+h1 span{display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-1px;
+  background:repeating-linear-gradient(45deg,var(--signal) 0 4px,#222 4px 8px);border-radius:2px}
+.steps{display:flex;gap:6px;margin-left:auto;font-family:"Barlow Condensed",sans-serif;font-size:16px}
+.step{padding:4px 10px;border-radius:14px;color:var(--ink-dim);border:1px solid transparent;white-space:nowrap}
+.step.on{color:var(--signal-ink);background:var(--signal);font-weight:600}
+.step.done{color:var(--ink);border-color:var(--panel-edge)}
+#stage{position:relative;height:calc(100% - 52px)}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#panel{position:absolute;top:14px;right:14px;width:300px;max-height:calc(100% - 28px);overflow:auto;
+  background:var(--panel);border:1px solid var(--panel-edge);border-radius:10px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:0 0 14px}
+#panel::before{content:"";display:block;height:6px;border-radius:10px 10px 0 0;
+  background:repeating-linear-gradient(-45deg,var(--signal) 0 10px,#1b1b1b 10px 20px)}
+.sec{padding:12px 16px 0}
+.sec h2{font-family:"Barlow Condensed",sans-serif;font-size:20px;font-weight:600;margin:4px 0 6px}
+.sec p{margin:0 0 10px;color:var(--ink-dim);line-height:1.45}
+label.row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0}
+.lbl{color:var(--ink-dim);font-size:14px}
+select,input[type=range]{width:100%}
+select{background:var(--field);color:var(--ink);border:1px solid var(--panel-edge);border-radius:6px;padding:7px 8px;font:inherit}
+select option{background:#15203a}
+.spec{font-size:13px;color:var(--ink-dim);line-height:1.5;margin:6px 0 4px;font-variant-numeric:tabular-nums}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+button{font:inherit;font-weight:500;color:var(--ink);background:var(--field);border:1px solid var(--panel-edge);
+  border-radius:6px;padding:7px 11px;cursor:pointer}
+button:hover{background:rgba(255,255,255,.12)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+button.primary{background:var(--signal);color:var(--signal-ink);border-color:transparent;font-weight:600;width:100%;padding:10px;font-size:16px}
+button.primary:hover{filter:brightness(1.08)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.seg{display:flex;border:1px solid var(--panel-edge);border-radius:6px;overflow:hidden}
+.seg button{flex:1;border:0;border-radius:0;background:transparent}
+.seg button.on{background:rgba(242,194,48,.18);color:var(--signal)}
+.stats{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-variant-numeric:tabular-nums;margin-top:4px}
+.stats div:nth-child(odd){color:var(--ink-dim)}
+.stats div:nth-child(even){text-align:right;font-weight:600}
+.bar{height:6px;border-radius:3px;background:var(--field);margin:10px 0 2px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--signal)}
+.big{font-family:"Barlow Condensed",sans-serif;font-size:40px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.big small{font-size:16px;font-weight:500;color:var(--ink-dim);margin-left:4px}
+.result{margin-top:12px;padding:10px 12px;border-radius:8px;line-height:1.45;display:none}
+.result.ok{display:block;background:rgba(95,224,160,.12);border:1px solid rgba(95,224,160,.4)}
+.result.bad{display:block;background:rgba(255,107,94,.12);border:1px solid rgba(255,107,94,.45)}
+.result b{display:block;font-family:"Barlow Condensed",sans-serif;font-size:19px;margin-bottom:2px}
+details{margin-top:12px;color:var(--ink-dim);font-size:13px;line-height:1.5}
+details summary{cursor:pointer;color:var(--ink)}
+details p{margin:6px 0}
+#hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);max-width:min(620px,calc(100% - 28px));
+  background:var(--panel);border:1px solid var(--panel-edge);border-radius:8px;padding:8px 14px;text-align:center;
+  font-size:14px;pointer-events:none;line-height:1.4}
+#toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:var(--bad);color:#200;
+  padding:6px 14px;border-radius:6px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none}
+#legend{position:absolute;left:14px;top:14px;background:var(--panel);border:1px solid var(--panel-edge);
+  border-radius:8px;padding:8px 12px;font-size:13px;display:none;width:230px}
+#legend .grad{height:10px;border-radius:5px;margin:6px 0 3px;
+  background:linear-gradient(90deg,#4fb3ff,#cdd5df 50%,#ff5a4e)}
+#legend .ends{display:flex;justify-content:space-between;color:var(--ink-dim)}
+.hidden{display:none!important}
+@media (max-width:720px){
+  .steps .step:not(.on){display:none}
+  h1{font-size:20px}
+  #panel{top:auto;bottom:0;right:0;left:0;width:auto;max-height:44%;border-radius:10px 10px 0 0}
+  #hint{bottom:auto;top:10px}
+  #legend{display:none!important}
+}
+@media (prefers-reduced-motion: reduce){ #toast{transition:none} }
+</style>
+</head>
+<body>
+<header>
+  <h1><span></span>Gerüst im Wind</h1>
+  <div class="steps">
+    <div class="step" id="st1">1 Fundament</div>
+    <div class="step" id="st2">2 Gerüst</div>
+    <div class="step" id="st3">3 Windtest</div>
+  </div>
+</header>
+<div id="stage">
+  <canvas id="cv"></canvas>
+  <div id="legend">
+    <div>Auslastung |N| / N<sub>R</sub></div>
+    <div class="grad"></div>
+    <div class="ends"><span>Druck 100 %</span><span>0</span><span>Zug 100 %</span></div>
+  </div>
+  <div id="toast"></div>
+  <div id="hint"></div>
+
+  <aside id="panel">
+    <!-- Phase 1 -->
+    <div class="sec" id="secF">
+      <h2>Fundament setzen</h2>
+      <p>Klicke die Eckpunkte des Betonfundaments. Die Ecken werden zu festen Lagerpunkten.</p>
+      <label class="row"><span class="lbl">Am 0,5-m-Raster einrasten</span><input type="checkbox" id="snapF" checked></label>
+      <div class="btns">
+        <button id="fUndo">Letzten Punkt entfernen</button>
+        <button id="fClose">Fundament schließen</button>
+      </div>
+    </div>
+
+    <!-- Phase 2 -->
+    <div class="sec hidden" id="secB">
+      <h2>Gerüst bauen</h2>
+      <label class="lbl" for="mat">Stabprofil (Länge fest 2,00 m)</label>
+      <select id="mat"></select>
+      <div class="spec" id="spec"></div>
+      <div class="lbl" style="margin-top:10px">Werkzeug</div>
+      <div class="seg" style="margin-top:4px">
+        <button id="tBuild" class="on">Bauen</button>
+        <button id="tDel">Löschen</button>
+      </div>
+      <label class="row"><span class="lbl">Winkel auf 15° einrasten</span><input type="checkbox" id="snapB" checked></label>
+      <label class="lbl" for="vmax">Maximale Windgeschwindigkeit in 10 m Höhe</label>
+      <input type="range" id="vmax" min="10" max="80" step="1" value="45">
+      <div class="spec" id="vmaxTxt"></div>
+      <div class="btns">
+        <button id="bUndo">Rückgängig</button>
+        <button id="bClear">Gerüst leeren</button>
+        <button id="bNewF">Neues Fundament</button>
+      </div>
+      <div class="spec" id="buildInfo" style="margin-top:10px"></div>
+      <div class="btns"><button class="primary" id="go">Windtest starten</button></div>
+      <details>
+        <summary>So baust du</summary>
+        <p>Klicke einen Knoten an, dann zeigt ein Geisterstab (2 m) zur Maus. Klick setzt einen neuen Knoten. Grüne Punkte schließen ein gleichseitiges Dreieck mit einem Nachbarknoten.</p>
+        <p>Zwei vorhandene Knoten lassen sich nur verbinden, wenn ihr Abstand 2 m (±4 %) beträgt. Klick auf eine Fundamentkante setzt einen zusätzlichen Lagerpunkt.</p>
+        <p>Rechtsklick oder Werkzeug „Löschen“ entfernt Stäbe und Knoten. Esc hebt die Auswahl auf, Strg+Z macht rückgängig.</p>
+      </details>
+    </div>
+
+    <!-- Phase 3 -->
+    <div class="sec hidden" id="secS">
+      <h2>Windtest</h2>
+      <div class="big" id="sU">0<small>m/s</small></div>
+      <div class="spec" id="sU2">in 10 m Höhe</div>
+      <div class="bar"><i id="prog"></i></div>
+      <div class="stats">
+        <div>Zeit</div><div id="sT">–</div>
+        <div>Wind an der Spitze</div><div id="sTop">–</div>
+        <div>Max. Auslastung jetzt</div><div id="sMax">–</div>
+        <div>Max. Auslastung bisher</div><div id="sPeak">–</div>
+        <div>Gebrochene Stäbe</div><div id="sBr">–</div>
+        <div>Verschiebung Spitze</div><div id="sDisp">–</div>
+      </div>
+      <label class="row"><span class="lbl">Zeitlupe (¼)</span><input type="checkbox" id="slow"></label>
+      <div class="btns">
+        <button id="sRestart">Test wiederholen</button>
+        <button id="sBack">Zurück zum Bauen</button>
+      </div>
+      <div class="result" id="res"></div>
+      <details>
+        <summary>Physikalisches Modell</summary>
+        <p>Gelenkiges Fachwerk: Stäbe tragen nur Normalkraft, Steifigkeit k = EA/L. Zeitintegration mit XPBD (Compliance α = 1/k, Δt = 1/2400 s), Stabkraft aus dem Lagrange-Multiplikator N = −λ/Δt².</p>
+        <p>Masse: Rohrgewicht ρAL je zur Hälfte auf die Knoten plus 1,2 kg je Kupplung. Schwerkraft wird in 0,8 s aufgebracht.</p>
+        <p>Wind: Potenzprofil u(z) = u₁₀(z/10 m)^0,16 mit Böen (Turbulenzintensität ≈ 17 %). Kraft je Stab nach dem Querströmungsprinzip f = ½ρ c<sub>D</sub> D |v<sub>n</sub>| v<sub>n</sub> mit der Relativgeschwindigkeit normal zum Stab.</p>
+        <p>Versagen (tiefpassgefilterte Kraft, τ = 30 ms): Zug N &gt; f<sub>y</sub>A, Druck |N| &gt; min(f<sub>y</sub>A, π²EI/L²) (Euler-Fall 2). Charakteristische Werte ohne Teilsicherheitsbeiwerte, keine Abschattung, keine Biegesteifigkeit der Knoten.</p>
+      </details>
+    </div>
+  </aside>
+</div>
+
+<script>
+"use strict";
+/* ---------- Konstanten & Material ---------- */
+const G = 9.81, RHO_AIR = 1.225, L = 2.0, TOL = 0.04, JOINT_M = 1.2;
+const H_STEP = 1 / 2400, ITER = 2, DAMP = 0.5, TAU = 0.03;
+const MATS = {
+  steel48: {name:"Gerüstrohr Stahl Ø48,3×3,2 (S235)", E:210e9, A:4.534e-4, I:1.1586e-7, ft:235e6, fc:235e6, rho:7850, D:0.0483, Cd:1.2, col:[205,213,223], w:4.5},
+  alu48:   {name:"Alurohr Ø48,3×4,0 (EN AW-6082 T6)", E:70e9,  A:5.567e-4, I:1.3767e-7, ft:250e6, fc:250e6, rho:2700, D:0.0483, Cd:1.2, col:[228,232,238], w:4.5},
+  steel21: {name:"Dünnes Stahlrohr Ø21,3×2,0 (S235)",  E:210e9, A:1.213e-4, I:5.707e-9,  ft:235e6, fc:235e6, rho:7850, D:0.0213, Cd:1.2, col:[190,198,210], w:3},
+  wood:    {name:"Holzlatte 40×60 mm (C24)",           E:11e9,  A:2.4e-3,   I:3.2e-7,    ft:14e6,  fc:21e6,  rho:420,  D:0.05,   Cd:2.0, col:[201,150,90],  w:6}
+};
+function matProps(M){
+  const m = M.rho * M.A * L, Nt = M.ft * M.A, Fcr = Math.PI ** 2 * M.E * M.I / (L * L);
+  return {m, Nt, Fcr, Nc: Math.min(M.fc * M.A, Fcr), buckle: Fcr < M.fc * M.A};
+}
+const fmt = (x, d = 2) => x.toFixed(d).replace(".", ",");
+const kN = x => fmt(x / 1000, 1) + " kN";
+function beaufort(v){ const t=[0.5,1.6,3.4,5.5,8,10.8,13.9,17.2,20.8,24.5,28.5,32.7]; let b=0; while(b<12&&v>=t[b]) b++; return b; }
+
+/* ---------- Zustand ---------- */
+const S = {phase:"foundation", poly:[], nodes:[], rods:[], sel:null, tool:"build",
+  ms:null, mw:null, hover:null, edgeHover:null, preview:null, cands:[], closeHover:false,
+  history:[], snapF:true, snapB:true, mat:"steel48", vmax:45, slow:false};
+let SIM = null;
+
+/* ---------- Canvas / Ansicht ---------- */
+const $ = id => document.getElementById(id);
+const cv = $("cv"), ctx = cv.getContext("2d"), stage = $("stage");
+let W = 0, H = 0, DPR = 1, sc = 20, ox = 0, oy = 0, backdrop = null, concretePat = null;
+const toS = (x, y) => [ox + x * sc, oy - y * sc];
+const toW = (sx, sy) => ({x: (sx - ox) / sc, y: (oy - sy) / sc});
+
+function resize(){
+  const r = stage.getBoundingClientRect();
+  W = r.width; H = r.height; DPR = window.devicePixelRatio || 1;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  const narrow = W < 720;
+  sc = Math.min(W / (narrow ? 22 : 38), (H - (narrow ? 60 : 90)) / 20);
+  ox = narrow ? W / 2 : (W - 320) / 2 + 0; oy = H - (narrow ? Math.max(70, H * 0.44 + 10) : 70);
+  if (narrow) sc = Math.min(sc, (oy - 50) / 16);
+  buildBackdrop(); buildPattern();
+}
+
+function rng(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+function buildBackdrop(){
+  backdrop = document.createElement("canvas");
+  backdrop.width = cv.width; backdrop.height = cv.height;
+  const b = backdrop.getContext("2d"); b.scale(DPR, DPR);
+  const sky = b.createLinearGradient(0, 0, 0, oy);
+  sky.addColorStop(0, "#0c1630"); sky.addColorStop(0.45, "#1f3159");
+  sky.addColorStop(0.78, "#5b4a6e"); sky.addColorStop(0.93, "#d98a5c"); sky.addColorStop(1, "#f0b56e");
+  b.fillStyle = sky; b.fillRect(0, 0, W, oy + 1);
+  const R = rng(7);
+  for (let i = 0; i < 140; i++){
+    const x = R() * W, y = R() * oy * 0.55, a = (1 - y / (oy * 0.55)) * 0.8 * R();
+    b.fillStyle = `rgba(255,255,255,${a})`; b.fillRect(x, y, R() < 0.1 ? 2 : 1, R() < 0.1 ? 2 : 1);
+  }
+  // Sonne
+  const sx = W * 0.18, sy = oy - 18;
+  const glow = b.createRadialGradient(sx, sy, 0, sx, sy, 220);
+  glow.addColorStop(0, "rgba(255,214,150,.75)"); glow.addColorStop(0.15, "rgba(255,180,110,.35)"); glow.addColorStop(1, "rgba(255,160,100,0)");
+  b.fillStyle = glow; b.fillRect(0, 0, W, oy);
+  b.fillStyle = "#ffe2b0"; b.beginPath(); b.arc(sx, sy, 26, 0, Math.PI * 2); b.fill();
+  // Hügel
+  const hills = [
+    {c:"#3a3553", h:95, f:[0.004,0.011], p:[1.3,0.2]},
+    {c:"#2a2842", h:62, f:[0.007,0.017], p:[0.4,2.1]},
+    {c:"#1c1d31", h:34, f:[0.012,0.031], p:[2.2,0.9]}
+  ];
+  for (const hl of hills){
+    b.fillStyle = hl.c; b.beginPath(); b.moveTo(0, oy);
+    for (let x = 0; x <= W; x += 6){
+      const y = oy - hl.h * (0.55 + 0.3 * Math.sin(x * hl.f[0] + hl.p[0]) + 0.15 * Math.sin(x * hl.f[1] + hl.p[1]));
+      b.lineTo(x, y);
+    }
+    b.lineTo(W, oy); b.closePath(); b.fill();
+  }
+  // Stadt-Silhouette rechts in der Ferne
+  const R2 = rng(3); b.fillStyle = "#171a2c";
+  for (let x = W * 0.55; x < W; ){
+    const w = 10 + R2() * 22, h = 12 + R2() * 46; b.fillRect(x, oy - h, w, h);
+    if (R2() < 0.5){ b.fillStyle = "rgba(255,200,120,.45)"; b.fillRect(x + 3, oy - h + 5, 2, 2); b.fillStyle = "#171a2c"; }
+    x += w + R2() * 6;
+  }
+  // Boden
+  const g = b.createLinearGradient(0, oy, 0, H);
+  g.addColorStop(0, "#3d3024"); g.addColorStop(1, "#1d1611");
+  b.fillStyle = g; b.fillRect(0, oy, W, H - oy);
+  b.strokeStyle = "rgba(0,0,0,.25)"; b.lineWidth = 1;
+  for (let k = 1; k < 5; k++){ const y = oy + k * (H - oy) / 5; b.beginPath();
+    for (let x = 0; x <= W; x += 20) b.lineTo(x, y + 3 * Math.sin(x * 0.02 + k)); b.stroke(); }
+  const R3 = rng(11);
+  for (let i = 0; i < 260; i++){ b.fillStyle = `rgba(255,230,200,${0.04 + R3() * 0.06})`;
+    b.fillRect(R3() * W, oy + 6 + R3() * (H - oy), 2, 2); }
+  b.fillStyle = "#4f7a3a"; b.fillRect(0, oy - 1, W, 5);
+  b.fillStyle = "#6a9a4c";
+  for (let x = 0; x < W; x += 3){ const h = 2 + R3() * 5; b.fillRect(x, oy - h, 1, h); }
+}
+
+function buildPattern(){
+  const p = document.createElement("canvas"); p.width = p.height = 64;
+  const c = p.getContext("2d"); c.fillStyle = "#8d9299"; c.fillRect(0, 0, 64, 64);
+  const R = rng(5);
+  for (let i = 0; i < 260; i++){ const v = 110 + R() * 70 | 0;
+    c.fillStyle = `rgba(${v},${v},${v + 4},${0.35 + R() * 0.4})`; c.fillRect(R() * 64, R() * 64, 1 + R() * 2, 1 + R() * 2); }
+  for (let i = 0; i < 14; i++){ c.fillStyle = "rgba(60,62,66,.5)"; c.beginPath(); c.arc(R() * 64, R() * 64, 0.8 + R() * 1.4, 0, 7); c.fill(); }
+  concretePat = ctx.createPattern(p, "repeat");
+}
+
+/* ---------- Geometrie ---------- */
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function segInter(p1, p2, p3, p4){
+  const d = (p2.x - p1.x) * (p4.y - p3.y) - (p2.y - p1.y) * (p4.x - p3.x);
+  if (Math.abs(d) < 1e-12) return false;
+  const t = ((p3.x - p1.x) * (p4.y - p3.y) - (p3.y - p1.y) * (p4.x - p3.x)) / d;
+  const u = ((p3.x - p1.x) * (p2.y - p1.y) - (p3.y - p1.y) * (p2.x - p1.x)) / d;
+  return t > 1e-9 && t < 1 - 1e-9 && u > 1e-9 && u < 1 - 1e-9;
+}
+function inPoly(p){
+  const P = S.poly; if (P.length < 3 || S.phase === "foundation") return false;
+  let c = false;
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++){
+    if ((P[i].y > p.y) !== (P[j].y > p.y) && p.x < (P[j].x - P[i].x) * (p.y - P[i].y) / (P[j].y - P[i].y) + P[i].x) c = !c;
+  }
+  return c;
+}
+function closestOnSeg(p, a, b){
+  const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+  let t = l2 ? ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2 : 0; t = Math.max(0, Math.min(1, t));
+  return {x: a.x + t * dx, y: a.y + t * dy};
+}
+function closestOnPoly(p){
+  const P = S.poly; let best = null, bd = Infinity;
+  for (let i = 0; i < P.length; i++){
+    const q = closestOnSeg(p, P[i], P[(i + 1) % P.length]), d = dist(p, q);
+    if (d < bd){ bd = d; best = q; }
+  }
+  return {q: best, d: bd};
+}
+const boundaryDist = p => S.poly.length >= 3 ? closestOnPoly(p).d : Infinity;
+function polyArea(P){ let a = 0; for (let i = 0; i < P.length; i++){ const j = (i + 1) % P.length; a += P[i].x * P[j].y - P[j].x * P[i].y; } return a / 2; }
+
+/* ---------- Bau-Logik ---------- */
+function nodeAt(sx, sy, r = 13){
+  let best = null, bd = r;
+  S.nodes.forEach((n, i) => { const [x, y] = toS(n.x, n.y); const d = Math.hypot(x - sx, y - sy); if (d < bd){ bd = d; best = i; } });
+  return best;
+}
+function rodAt(sx, sy, r = 7){
+  let best = null, bd = r;
+  S.rods.forEach((rd, i) => {
+    const [ax, ay] = toS(S.nodes[rd.a].x, S.nodes[rd.a].y), [bx, by] = toS(S.nodes[rd.b].x, S.nodes[rd.b].y);
+    const q = closestOnSeg({x: sx, y: sy}, {x: ax, y: ay}, {x: bx, y: by});
+    const d = Math.hypot(q.x - sx, q.y - sy); if (d < bd){ bd = d; best = i; }
+  });
+  return best;
+}
+function edgeAt(){
+  if (S.poly.length < 3) return null;
+  const {q} = closestOnPoly(S.mw); const [x, y] = toS(q.x, q.y);
+  return Math.hypot(x - S.ms.x, y - S.ms.y) < 10 ? q : null;
+}
+function nearestNode(p, r, skip = -1){
+  let best = null, bd = r;
+  S.nodes.forEach((n, i) => { if (i === skip) return; const d = dist(n, p); if (d < bd){ bd = d; best = i; } });
+  return best;
+}
+const hasRod = (a, b) => S.rods.some(r => (r.a === a && r.b === b) || (r.a === b && r.b === a));
+function spotOK(P, ignore){
+  if (P.y < -0.02) return {ok:false, msg:"Unter der Geländeoberkante"};
+  if (inPoly(P) && boundaryDist(P) > 0.03) return {ok:false, msg:"Liegt im Fundament"};
+  for (let k = 0; k < S.nodes.length; k++){
+    if (ignore.includes(k)) continue;
+    if (dist(S.nodes[k], P) < 0.35 * L) return {ok:false, msg:"Zu nah an einem Knoten"};
+  }
+  return {ok:true};
+}
+function rodOK(A, B){
+  for (let i = 1; i < 10; i++){
+    const t = i / 10, q = {x: A.x + t * (B.x - A.x), y: A.y + t * (B.y - A.y)};
+    if (q.y < -0.02) return false;
+    if (inPoly(q) && boundaryDist(q) > 0.02) return false;
+  }
+  return true;
+}
+function connectPreview(ia, ib){
+  const A = S.nodes[ia], B = S.nodes[ib], d = dist(A, B);
+  let ok = true, msg = `Verbinden · ${fmt(d)} m`;
+  if (A.anchor && B.anchor){ ok = false; msg = "Beide Knoten sind Lagerpunkte"; }
+  else if (hasRod(ia, ib)){ ok = false; msg = "Stab existiert bereits"; }
+  else if (Math.abs(d - L) > TOL * L){ ok = false; msg = `Abstand ${fmt(d)} m, nötig ${fmt(L)} m`; }
+  else if (!rodOK(A, B)){ ok = false; msg = "Stab schneidet Fundament oder Boden"; }
+  return {type:"connect", b:ib, ok, msg};
+}
+function computePreview(){
+  const ia = S.sel, A = S.nodes[ia], m = S.mw, cands = [];
+  S.nodes.forEach((B, j) => {
+    if (j === ia) return;
+    const d = dist(A, B); if (d < 0.2 * L || d > 2 * L * (1 - 1e-6)) return;
+    const a = d / 2, hh = Math.sqrt(L * L - a * a), mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+    const px = -(B.y - A.y) / d, py = (B.x - A.x) / d;
+    for (const sg of [1, -1]){
+      const P = {x: mx + sg * hh * px, y: my + sg * hh * py};
+      if (nearestNode(P, 0.05 * L) !== null) continue;
+      if (!spotOK(P, [ia, j]).ok || !rodOK(A, P) || !rodOK(B, P)) continue;
+      cands.push({P, j});
+    }
+  });
+  S.cands = cands;
+  const h = nodeAt(S.ms.x, S.ms.y);
+  if (h === ia) return null;
+  if (h !== null) return connectPreview(ia, h);
+  let best = null, bd = 16;
+  for (const c of cands){ const [sx, sy] = toS(c.P.x, c.P.y); const d = Math.hypot(sx - S.ms.x, sy - S.ms.y); if (d < bd){ bd = d; best = c; } }
+  if (best) return {type:"tri", p:best.P, b:best.j, ok:true, msg:"Dreieck schließen"};
+  const dx = m.x - A.x, dy = m.y - A.y; if (Math.hypot(dx, dy) < 1e-6) return null;
+  let ang = Math.atan2(dy, dx);
+  if (S.snapB) ang = Math.round(ang / (Math.PI / 12)) * (Math.PI / 12);
+  const P = {x: A.x + L * Math.cos(ang), y: A.y + L * Math.sin(ang)};
+  const nn = nearestNode(P, 0.12 * L, ia); if (nn !== null) return connectPreview(ia, nn);
+  const sp = spotOK(P, [ia]); let ok = sp.ok, msg = sp.msg;
+  if (ok && !rodOK(A, P)){ ok = false; msg = "Stab schneidet Fundament oder Boden"; }
+  if (ok){ let deg = Math.round(ang * 180 / Math.PI); msg = `Neuer Stab · ${deg}°`; }
+  return {type:"free", p:P, ok, msg};
+}
+function pushHist(){ S.history.push(JSON.stringify({n:S.nodes, r:S.rods})); if (S.history.length > 150) S.history.shift(); }
+function applyPreview(p){
+  if (!p) return;
+  if (!p.ok){ toast(p.msg); return; }
+  pushHist();
+  if (p.type === "connect"){ S.rods.push({a:S.sel, b:p.b}); S.sel = p.b; }
+  else {
+    const anchor = boundaryDist(p.p) < 0.03;
+    const idx = S.nodes.push({x:p.p.x, y:p.p.y, anchor, corner:false}) - 1;
+    S.rods.push({a:S.sel, b:idx});
+    if (p.type === "tri") S.rods.push({a:p.b, b:idx});
+    S.sel = idx;
+  }
+  refreshInfo();
+}
+function removeNode(n){
+  S.rods = S.rods.filter(r => r.a !== n && r.b !== n).map(r => ({a: r.a > n ? r.a - 1 : r.a, b: r.b > n ? r.b - 1 : r.b}));
+  S.nodes.splice(n, 1);
+  if (S.sel === n) S.sel = null; else if (S.sel !== null && S.sel > n) S.sel--;
+}
+function cleanup(){
+  for (let i = S.nodes.length - 1; i >= 0; i--){
+    if (S.nodes[i].anchor) continue;
+    if (!S.rods.some(r => r.a === i || r.b === i)) removeNode(i);
+  }
+}
+function deleteAt(){
+  const n = nodeAt(S.ms.x, S.ms.y);
+  if (n !== null){
+    pushHist();
+    if (S.nodes[n].corner) S.rods = S.rods.filter(r => r.a !== n && r.b !== n);
+    else removeNode(n);
+    cleanup(); S.sel = null; refreshInfo(); return;
+  }
+  const r = rodAt(S.ms.x, S.ms.y);
+  if (r !== null){ pushHist(); S.rods.splice(r, 1); cleanup(); S.sel = null; refreshInfo(); }
+}
+function undo(){
+  if (S.phase === "foundation"){ S.poly.pop(); return; }
+  if (S.phase !== "build" || !S.history.length) return;
+  const h = JSON.parse(S.history.pop()); S.nodes = h.n; S.rods = h.r; S.sel = null; refreshInfo();
+}
+
+/* ---------- Fundament ---------- */
+function snapPt(p){ return S.snapF ? {x: Math.round(p.x * 2) / 2, y: Math.round(p.y * 2) / 2} : {x:p.x, y:p.y}; }
+function addPolyPoint(){
+  const p = snapPt(S.mw), P = S.poly, n = P.length;
+  if (n && dist(p, P[n - 1]) < 0.1) return;
+  for (let i = 0; i < n - 2; i++) if (segInter(P[n - 1], p, P[i], P[i + 1])){ toast("Die Kante würde das Polygon kreuzen"); return; }
+  P.push(p);
+}
+function closePoly(){
+  const P = S.poly, n = P.length;
+  if (n < 3){ toast("Mindestens drei Eckpunkte setzen"); return; }
+  for (let i = 1; i < n - 2; i++) if (segInter(P[n - 1], P[0], P[i], P[i + 1])){ toast("Das Polygon überschneidet sich"); return; }
+  if (Math.abs(polyArea(P)) < 0.25){ toast("Fundament zu klein (< 0,25 m²)"); return; }
+  S.nodes = P.map(p => ({x:p.x, y:p.y, anchor:true, corner:true}));
+  S.rods = []; S.history = []; S.sel = null; S.phase = "build";
+  updateUI(); refreshInfo();
+}
+
+/* ---------- Eingabe ---------- */
+function setMouse(e){
+  const r = cv.getBoundingClientRect();
+  S.ms = {x: e.clientX - r.left, y: e.clientY - r.top}; S.mw = toW(S.ms.x, S.ms.y);
+}
+function updateHover(){
+  S.preview = null; S.hover = null; S.edgeHover = null; S.cands = []; S.closeHover = false;
+  if (!S.ms) return;
+  if (S.phase === "foundation"){
+    if (S.poly.length >= 3){ const [x, y] = toS(S.poly[0].x, S.poly[0].y); S.closeHover = Math.hypot(x - S.ms.x, y - S.ms.y) < 13; }
+    return;
+  }
+  if (S.phase !== "build") return;
+  if (S.tool === "delete"){
+    const n = nodeAt(S.ms.x, S.ms.y);
+    if (n !== null) S.hover = {type:"node", i:n};
+    else { const r = rodAt(S.ms.x, S.ms.y); if (r !== null) S.hover = {type:"rod", i:r}; }
+    return;
+  }
+  if (S.sel === null){
+    const n = nodeAt(S.ms.x, S.ms.y);
+    if (n !== null){ S.hover = {type:"node", i:n}; return; }
+    S.edgeHover = edgeAt(); return;
+  }
+  S.preview = computePreview();
+}
+
+cv.addEventListener("pointermove", e => { setMouse(e); updateHover(); updateHint(); });
+cv.addEventListener("pointerleave", () => { S.ms = null; S.preview = null; S.hover = null; S.edgeHover = null; S.cands = []; });
+cv.addEventListener("contextmenu", e => e.preventDefault());
+cv.addEventListener("pointerdown", e => {
+  setMouse(e); updateHover();
+  if (S.phase === "foundation"){
+    if (e.button !== 0) return;
+    if (S.closeHover) closePoly(); else addPolyPoint();
+    return;
+  }
+  if (S.phase !== "build") return;
+  if (e.button === 2){
+    if (S.sel !== null){ S.sel = null; } else deleteAt();
+    updateHover(); return;
+  }
+  if (e.button !== 0) return;
+  if (S.tool === "delete"){ deleteAt(); updateHover(); return; }
+  if (S.sel === null){
+    const n = nodeAt(S.ms.x, S.ms.y);
+    if (n !== null) S.sel = n;
+    else {
+      const q = edgeAt();
+      if (q){
+        if (nearestNode(q, 0.3) !== null){ toast("Zu nah an einem vorhandenen Lagerpunkt"); }
+        else { pushHist(); S.sel = S.nodes.push({x:q.x, y:q.y, anchor:true, corner:false}) - 1; refreshInfo(); }
+      } else hint("Wähle zuerst einen Knoten auf dem Fundament oder am Gerüst.", true);
+    }
+  } else applyPreview(S.preview);
+  updateHover(); updateHint();
+});
+window.addEventListener("keydown", e => {
+  if (e.key === "Escape"){ S.sel = null; updateHover(); }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z"){ e.preventDefault(); undo(); updateHover(); }
+  if ((e.key === "Delete" || e.key === "Backspace") && S.phase === "build" && S.ms && e.target === document.body){ deleteAt(); updateHover(); }
+});
+
+/* ---------- Wind ---------- */
+const GUST = (() => {
+  const R = rng(42), comps = [];
+  const fs = [0.06, 0.13, 0.27, 0.5, 0.9, 1.6];
+  let s2 = 0;
+  for (const f of fs){ const a = Math.pow(f, -0.6); comps.push({w: 2 * Math.PI * f, a, ph: R() * 6.28, kz: (R() - 0.5) * 0.25}); s2 += a * a / 2; }
+  const norm = 1 / Math.sqrt(s2); comps.forEach(c => c.a *= norm);
+  return comps;
+})();
+function windU(x, z, t){
+  if (!SIM || SIM.Uref <= 0) return 0;
+  const Uc = Math.max(10, 0.6 * S.vmax);
+  let g = 0;
+  for (const c of GUST) g += c.a * Math.sin(c.w * (t - x / Uc) + c.ph + c.kz * z);
+  const prof = Math.pow(Math.max(z, 1) / 10, 0.16);
+  return Math.max(0, SIM.Uref * prof * (1 + 0.17 * g));
+}
+
+/* ---------- Simulation ---------- */
+const T_CALM = 1.5, HOLD = 8;
+function rampTime(){ return 14; }
+function startSim(){
+  if (!S.rods.length){ toast("Baue zuerst mindestens einen Stab"); return; }
+  const M = MATS[S.mat], mp = matProps(M);
+  const nodes = S.nodes.map(n => ({x:n.x, y:n.y, px:n.x, py:n.y, vx:0, vy:0, fx:0, fy:0, m:JOINT_M, fixed:n.anchor, x0:n.x, y0:n.y, w:0}));
+  const rods = S.rods.map(r => {
+    const A = nodes[r.a], B = nodes[r.b], rest = dist(A, B), k = M.E * M.A / rest;
+    A.m += mp.m / 2; B.m += mp.m / 2;
+    return {a:r.a, b:r.b, rest, compl: 1 / k, lam:0, F:0, Ff:0, u:0, broken:false};
+  });
+  nodes.forEach(n => n.w = n.fixed ? 0 : 1 / n.m);
+  let top = null; nodes.forEach((n, i) => { if (!n.fixed && (top === null || n.y0 > nodes[top].y0)) top = i; });
+  SIM = {t:0, acc:0, nodes, rods, M, mp, Uref:0, debris:[], sparks:[], parts:[], maxU:0, peakU:0,
+    broken:0, firstFail:null, collapse:null, done:false, top, endT: T_CALM + rampTime() + HOLD, lastStats:0};
+  initParticles();
+  S.phase = "sim"; S.sel = null; S.preview = null;
+  updateUI();
+}
+function simStep(h){
+  const N = SIM.nodes, R = SIM.rods, M = SIM.M, t = (SIM.t += h);
+  const tr = t - T_CALM;
+  SIM.Uref = tr <= 0 ? 0 : Math.min(S.vmax, S.vmax * tr / rampTime());
+  const gs = Math.min(1, t / 0.8);
+  for (const n of N){ n.fx = 0; n.fy = -n.m * G * gs; }
+  if (SIM.Uref > 0){
+    const c0 = 0.5 * RHO_AIR * M.Cd * M.D;
+    for (const r of R){
+      if (r.broken) continue;
+      const A = N[r.a], B = N[r.b];
+      const dx = B.x - A.x, dy = B.y - A.y, len = Math.hypot(dx, dy); if (len < 1e-9) continue;
+      const tx = dx / len, ty = dy / len;
+      const u = windU((A.x + B.x) / 2, (A.y + B.y) / 2, t);
+      const rx = u - (A.vx + B.vx) / 2, ry = -(A.vy + B.vy) / 2;
+      const dot = rx * tx + ry * ty, nx = rx - dot * tx, ny = ry - dot * ty, vn = Math.hypot(nx, ny);
+      const f = c0 * len * vn;
+      A.fx += 0.5 * f * nx; A.fy += 0.5 * f * ny; B.fx += 0.5 * f * nx; B.fy += 0.5 * f * ny;
+    }
+  }
+  const damp = 1 - DAMP * h;
+  for (const n of N){
+    if (n.fixed) continue;
+    n.vx = (n.vx + h * n.fx / n.m) * damp; n.vy = (n.vy + h * n.fy / n.m) * damp;
+    n.px = n.x; n.py = n.y; n.x += h * n.vx; n.y += h * n.vy;
+  }
+  const h2 = h * h;
+  for (const r of R) r.lam = 0;
+  for (let it = 0; it < ITER; it++){
+    for (const r of R){
+      if (r.broken) continue;
+      const A = N[r.a], B = N[r.b], wsum = A.w + B.w; if (wsum === 0) continue;
+      const dx = A.x - B.x, dy = A.y - B.y, len = Math.hypot(dx, dy); if (len < 1e-9) continue;
+      const C = len - r.rest, at = r.compl / h2;
+      const dl = (-C - at * r.lam) / (wsum + at);
+      r.lam += dl;
+      const nx = dx / len, ny = dy / len;
+      A.x += A.w * dl * nx; A.y += A.w * dl * ny;
+      B.x -= B.w * dl * nx; B.y -= B.w * dl * ny;
+    }
+  }
+  for (const n of N){
+    if (n.fixed) continue;
+    if (n.y < 0){ n.y = 0; n.x = n.px + (n.x - n.px) * 0.3; }
+    if (inPoly(n)){
+      const {q} = closestOnPoly(n);
+      if (dist(q, n) > 0.005){ n.x = q.x; n.y = q.y; n.px = n.x - (n.x - n.px) * 0.3; }
+    }
+    n.vx = (n.x - n.px) / h; n.vy = (n.y - n.py) / h;
+  }
+  let maxU = 0; const k = Math.min(1, h / TAU), mp = SIM.mp;
+  for (const r of R){
+    if (r.broken) continue;
+    r.F = -r.lam / h2;
+    r.Ff += (r.F - r.Ff) * k;
+    r.u = r.Ff >= 0 ? r.Ff / mp.Nt : -r.Ff / mp.Nc;
+    if (r.u > 1 && t > 0.3) breakRod(r);
+    else if (r.u > maxU) maxU = r.u;
+  }
+  SIM.maxU = maxU; if (t > 0.3) SIM.peakU = Math.max(SIM.peakU, maxU);
+  if (!SIM.collapse && !SIM.firstFail && t > 0.5){
+    for (const n of N){
+      if (n.fixed) continue;
+      if (Math.hypot(n.x - n.x0, n.y - n.y0) > 1.5){ SIM.collapse = {t, U:SIM.Uref}; break; }
+    }
+  }
+}
+function breakRod(r){
+  const N = SIM.nodes, A = N[r.a], B = N[r.b], mp = SIM.mp;
+  r.broken = true; SIM.broken++;
+  const kind = r.Ff > 0 ? "Zugversagen (Fließen)" : (mp.buckle ? "Knicken (Euler)" : "Druckfließen");
+  if (!SIM.firstFail) SIM.firstFail = {t:SIM.t, U:SIM.Uref, kind, F:r.Ff};
+  const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2, ang = Math.atan2(B.y - A.y, B.x - A.x);
+  const bent = r.Ff < 0;
+  for (const s of [-1, 1]){
+    const n = s < 0 ? A : B;
+    SIM.debris.push({x: mx + s * (B.x - A.x) / 4, y: my + s * (B.y - A.y) / 4, vx: n.vx + s * 0.6 * Math.cos(ang), vy: n.vy + s * 0.6 * Math.sin(ang) + 1,
+      a: ang, w: (Math.random() - 0.5) * 8, life: 8, bent: bent ? s : 0});
+  }
+  for (let i = 0; i < 16; i++){
+    const a = Math.random() * Math.PI * 2, v = 2 + Math.random() * 5;
+    SIM.sparks.push({x:mx, y:my, vx:Math.cos(a) * v, vy:Math.sin(a) * v, life:0.4 + Math.random() * 0.4});
+  }
+}
+function updateFx(dt){
+  for (const d of SIM.debris){
+    d.vy -= G * dt; d.vx += (windU(d.x, d.y, SIM.t) - d.vx) * 0.05 * dt;
+    d.x += d.vx * dt; d.y += d.vy * dt; d.a += d.w * dt; d.life -= dt;
+    if (d.y < 0.03){ d.y = 0.03; d.vy *= -0.3; d.vx *= 0.7; d.w *= 0.6; }
+    if (inPoly(d)){ const {q} = closestOnPoly(d); d.x = q.x; d.y = q.y + 0.03; d.vy = Math.abs(d.vy) * 0.3; d.vx *= 0.7; }
+  }
+  SIM.debris = SIM.debris.filter(d => d.life > 0);
+  for (const s of SIM.sparks){ s.vy -= G * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt; }
+  SIM.sparks = SIM.sparks.filter(s => s.life > 0);
+}
+function worldBounds(){ const a = toW(0, 0), b = toW(W, H); return {x0:a.x, x1:b.x, y1:a.y}; }
+function initParticles(){
+  const wb = worldBounds(); SIM.parts = [];
+  for (let i = 0; i < 240; i++) SIM.parts.push({x: wb.x0 + Math.random() * (wb.x1 - wb.x0), y: 0.2 + Math.random() * (wb.y1 - 0.2), j: Math.random() * 6.28});
+}
+function updateParticles(dt){
+  const wb = worldBounds();
+  for (const p of SIM.parts){
+    p.u = windU(p.x, p.y, SIM.t);
+    p.x += (0.45 * p.u + 0.3) * dt;
+    p.y += Math.sin(SIM.t * 1.3 + p.j) * 0.15 * dt * (p.u > 1 ? 1 : 0);
+    if (p.x > wb.x1 + 1){ p.x = wb.x0 - Math.random() * 3; p.y = 0.2 + Math.random() * (wb.y1 - 0.2); }
+  }
+}
+function evalResult(){
+  const res = $("res");
+  const M = SIM.M;
+  if (SIM.firstFail){
+    const f = SIM.firstFail;
+    res.className = "result bad";
+    res.innerHTML = `<b>Versagen bei ${fmt(f.U, 1)} m/s</b>Erster Stab: ${f.kind}, |N| = ${kN(Math.abs(f.F))} nach ${fmt(f.t, 1)} s. Insgesamt ${SIM.broken} von ${SIM.rods.length} Stäben gebrochen.`;
+  } else if (SIM.collapse){
+    res.className = "result bad";
+    res.innerHTML = SIM.collapse.U === 0
+      ? `<b>Kinematisch instabil</b>Das Gerüst verformt sich schon unter Eigengewicht um mehr als 1,5 m. Gelenkige Vierecke brauchen Diagonalen.`
+      : `<b>Zu große Verformung bei ${fmt(SIM.collapse.U, 1)} m/s</b>Ein Knoten hat sich um mehr als 1,5 m verschoben, ohne dass ein Stab gebrochen ist. Meist fehlt eine Diagonale: Das Gerüst ist ein Mechanismus.`;
+  } else if (SIM.done){
+    res.className = "result ok";
+    res.innerHTML = `<b>Hält stand</b>${fmt(S.vmax, 0)} m/s (${Math.round(S.vmax * 3.6)} km/h, Bft ${beaufort(S.vmax)}) mit Böen über ${HOLD} s. Maximale Auslastung ${Math.round(SIM.peakU * 100)} % (${M.name}).`;
+  } else res.className = "result";
+}
+function updateStats(){
+  const U = SIM.Uref;
+  $("sU").innerHTML = `${fmt(U, 1)}<small>m/s</small>`;
+  $("sU2").textContent = `in 10 m Höhe · ${Math.round(U * 3.6)} km/h · Bft ${beaufort(U)}`;
+  $("sT").textContent = `${fmt(SIM.t, 1)} s`;
+  $("prog").style.width = `${Math.min(100, SIM.t / SIM.endT * 100)}%`;
+  const N = SIM.nodes, tp = SIM.top;
+  if (tp !== null){
+    const n = N[tp];
+    $("sTop").textContent = `${fmt(windU(n.x, n.y, SIM.t), 1)} m/s`;
+    $("sDisp").textContent = `${fmt(Math.hypot(n.x - n.x0, n.y - n.y0) * 100, 1)} cm`;
+  } else { $("sTop").textContent = "–"; $("sDisp").textContent = "–"; }
+  $("sMax").textContent = `${Math.round(SIM.maxU * 100)} %`;
+  $("sPeak").textContent = `${Math.round(SIM.peakU * 100)} %`;
+  $("sBr").textContent = `${SIM.broken} / ${SIM.rods.length}`;
+  evalResult();
+}
+
+/* ---------- Zeichnen ---------- */
+function mix(a, b, k){ return [0, 1, 2].map(i => Math.round(a[i] + (b[i] - a[i]) * k)); }
+function rodColor(u, F, base){
+  const k = Math.min(1, Math.max(0, u));
+  const tgt = F >= 0 ? [255, 90, 78] : [79, 179, 255];
+  return mix(base, tgt, Math.pow(k, 0.8));
+}
+function drawGrid(){
+  const wb = worldBounds();
+  ctx.lineWidth = 1;
+  for (let x = Math.ceil(wb.x0 * 2) / 2; x < wb.x1; x += 0.5){
+    const major = Math.abs(x / L - Math.round(x / L)) < 1e-6;
+    ctx.strokeStyle = major ? "rgba(255,255,255,.09)" : "rgba(255,255,255,.035)";
+    const [sx] = toS(x, 0); ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, H); ctx.stroke();
+  }
+  for (let y = Math.floor(toW(0, H).y * 2) / 2; y < wb.y1; y += 0.5){
+    const major = Math.abs(y / L - Math.round(y / L)) < 1e-6;
+    ctx.strokeStyle = major ? "rgba(255,255,255,.09)" : "rgba(255,255,255,.035)";
+    const [, sy] = toS(0, y); ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(W, sy); ctx.stroke();
+  }
+  ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.font = "11px Barlow, sans-serif";
+  for (let y = 2; y < wb.y1; y += 2){ const [, sy] = toS(0, y); ctx.fillText(`${y} m`, 6, sy - 3); }
+}
+function drawScale(){
+  const x1 = W - (W < 720 ? 20 : 340), y = oy + 34;
+  const [a] = toS(0, 0), [b] = toS(L, 0), len = b - a;
+  ctx.strokeStyle = "rgba(255,255,255,.7)"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x1 - len, y); ctx.lineTo(x1, y); ctx.moveTo(x1 - len, y - 5); ctx.lineTo(x1 - len, y + 5); ctx.moveTo(x1, y - 5); ctx.lineTo(x1, y + 5); ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.font = "12px Barlow, sans-serif"; ctx.textAlign = "center";
+  ctx.fillText("2 m = Stablänge", x1 - len / 2, y - 8); ctx.textAlign = "left";
+}
+function drawWindsock(t){
+  const wb = worldBounds(), px = wb.x0 + 1.2;
+  const [bx, by] = toS(px, 0), [tx, ty] = toS(px, 5);
+  ctx.strokeStyle = "#8a8f99"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(tx, ty); ctx.stroke();
+  const u = SIM && S.phase === "sim" ? windU(px, 5, SIM.t) : 0;
+  const s = Math.min(1, u / 15);
+  const phi = (Math.PI / 2) * (1 - s) * 0.92 + 0.12 * Math.sin(t * (4 + u * 0.4)) * Math.min(1, u / 8) + 0.04 * Math.sin(t * 1.1);
+  const dx = Math.cos(phi), dy = Math.sin(phi), nx = -dy, ny = dx;
+  const len = 1.7 * sc, r0 = 0.32 * sc, r1 = 0.12 * sc, segs = 5;
+  for (let i = 0; i < segs; i++){
+    const a = i / segs, b = (i + 1) / segs, ra = r0 + (r1 - r0) * a, rb = r0 + (r1 - r0) * b;
+    const ax = tx + dx * len * a, ay = ty + dy * len * a, cx = tx + dx * len * b, cy = ty + dy * len * b;
+    ctx.fillStyle = i % 2 ? "#f4f1ec" : "#e2552f";
+    ctx.beginPath(); ctx.moveTo(ax + nx * ra, ay + ny * ra); ctx.lineTo(cx + nx * rb, cy + ny * rb);
+    ctx.lineTo(cx - nx * rb, cy - ny * rb); ctx.lineTo(ax - nx * ra, ay - ny * ra); ctx.closePath(); ctx.fill();
+  }
+}
+function drawFoundation(){
+  const P = S.poly; if (!P.length) return;
+  if (S.phase === "foundation"){
+    const pts = P.slice(); const cur = S.ms ? snapPt(S.mw) : null;
+    if (cur && !S.closeHover) pts.push(cur);
+    if (pts.length >= 3){
+      ctx.beginPath(); pts.forEach((p, i) => { const [x, y] = toS(p.x, p.y); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.closePath();
+      ctx.fillStyle = "rgba(160,166,175,.25)"; ctx.fill();
+    }
+    ctx.setLineDash([]); ctx.strokeStyle = "#f2c230"; ctx.lineWidth = 2;
+    ctx.beginPath(); P.forEach((p, i) => { const [x, y] = toS(p.x, p.y); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
+    if (cur && P.length){
+      ctx.setLineDash([6, 5]); ctx.beginPath(); const [a, b] = toS(P[P.length - 1].x, P[P.length - 1].y);
+      const tgt = S.closeHover ? P[0] : cur; const [c, d] = toS(tgt.x, tgt.y);
+      ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.stroke(); ctx.setLineDash([]);
+    }
+    P.forEach((p, i) => {
+      const [x, y] = toS(p.x, p.y);
+      ctx.fillStyle = "#f2c230"; ctx.beginPath(); ctx.arc(x, y, i === 0 && S.closeHover ? 8 : 5, 0, 7); ctx.fill();
+      if (i === 0 && P.length >= 3){ ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, 11, 0, 7); ctx.stroke(); }
+    });
+    if (cur){
+      const [x, y] = toS(cur.x, cur.y);
+      ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x - 7, y); ctx.lineTo(x + 7, y); ctx.moveTo(x, y - 7); ctx.lineTo(x, y + 7); ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.font = "12px Barlow, sans-serif";
+      ctx.fillText(`${fmt(cur.x, 1)} | ${fmt(cur.y, 1)} m`, x + 10, y - 10);
+    }
+    return;
+  }
+  ctx.beginPath(); P.forEach((p, i) => { const [x, y] = toS(p.x, p.y); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.closePath();
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4;
+  ctx.fillStyle = concretePat; ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.clip();
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  P.forEach(p => { const [x, y] = toS(p.x, p.y); x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); });
+  ctx.strokeStyle = "rgba(40,44,50,.16)"; ctx.lineWidth = 1;
+  for (let x = x0 - (y1 - y0); x < x1; x += 9){ ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x + (y1 - y0), y0); ctx.stroke(); }
+  const sh = ctx.createLinearGradient(0, y0, 0, y1);
+  sh.addColorStop(0, "rgba(255,225,190,.18)"); sh.addColorStop(1, "rgba(0,0,0,.25)");
+  ctx.fillStyle = sh; ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+  ctx.restore();
+  ctx.strokeStyle = "#2a2e35"; ctx.lineWidth = 2; ctx.stroke();
+}
+function strokeRod(ax, ay, bx, by, col, w, glow){
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "rgba(10,12,18,.65)"; ctx.lineWidth = w + 2.5;
+  ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+  if (glow > 0){ ctx.shadowColor = `rgb(${col})`; ctx.shadowBlur = glow; }
+  ctx.strokeStyle = `rgb(${col})`; ctx.lineWidth = w;
+  ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(ax, ay - w * 0.2); ctx.lineTo(bx, by - w * 0.2); ctx.stroke();
+}
+function drawNode(x, y, anchor, r = 4.5){
+  if (anchor){
+    ctx.fillStyle = "#f2c230"; ctx.strokeStyle = "#4a3500"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(x, y, 6, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - 3, y); ctx.lineTo(x + 3, y); ctx.moveTo(x, y - 3); ctx.lineTo(x, y + 3); ctx.stroke();
+  } else {
+    ctx.fillStyle = "#1b2332"; ctx.strokeStyle = "#dfe5ee"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.stroke();
+  }
+}
+function drawStructureBuild(t){
+  const M = MATS[S.mat];
+  S.rods.forEach((r, i) => {
+    const A = S.nodes[r.a], B = S.nodes[r.b], [ax, ay] = toS(A.x, A.y), [bx, by] = toS(B.x, B.y);
+    const del = S.hover && S.hover.type === "rod" && S.hover.i === i;
+    strokeRod(ax, ay, bx, by, del ? [255, 107, 94] : M.col, M.w, 0);
+  });
+  // Vorschau
+  if (S.sel !== null && S.nodes[S.sel]){
+    const A = S.nodes[S.sel], [ax, ay] = toS(A.x, A.y);
+    ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.setLineDash([3, 5]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(ax, ay, L * sc, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    for (const c of S.cands){ const [x, y] = toS(c.P.x, c.P.y); ctx.fillStyle = "rgba(95,224,160,.55)"; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, 7); ctx.fill(); }
+    const p = S.preview;
+    if (p){
+      const col = p.ok ? "#5fe0a0" : "#ff6b5e";
+      ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.setLineDash([7, 5]);
+      const ends = [];
+      if (p.type === "connect"){ const B = S.nodes[p.b]; ends.push(toS(B.x, B.y)); }
+      else { ends.push(toS(p.p.x, p.p.y)); }
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ends[0][0], ends[0][1]); ctx.stroke();
+      if (p.type === "tri"){ const B = S.nodes[p.b], [bx, by] = toS(B.x, B.y); ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(ends[0][0], ends[0][1]); ctx.stroke(); }
+      ctx.setLineDash([]);
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(ends[0][0], ends[0][1], p.type === "connect" ? 9 : 5, 0, 7);
+      p.type === "connect" ? (ctx.lineWidth = 2, ctx.stroke()) : ctx.fill();
+      if (S.ms){
+        ctx.font = "600 12px Barlow, sans-serif";
+        const tw = ctx.measureText(p.msg).width;
+        ctx.fillStyle = "rgba(12,18,31,.85)"; ctx.fillRect(S.ms.x + 14, S.ms.y + 10, tw + 12, 20);
+        ctx.fillStyle = col; ctx.fillText(p.msg, S.ms.x + 20, S.ms.y + 24);
+      }
+    }
+  }
+  S.nodes.forEach((n, i) => {
+    const [x, y] = toS(n.x, n.y); drawNode(x, y, n.anchor);
+    const hov = S.hover && S.hover.type === "node" && S.hover.i === i;
+    if (hov){ ctx.strokeStyle = S.tool === "delete" ? "#ff6b5e" : "#fff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 10, 0, 7); ctx.stroke(); }
+    if (i === S.sel){ ctx.strokeStyle = "#f2c230"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 10 + 2 * Math.sin(t * 5), 0, 7); ctx.stroke(); }
+  });
+  if (S.edgeHover){
+    const [x, y] = toS(S.edgeHover.x, S.edgeHover.y);
+    ctx.strokeStyle = "#f2c230"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - 4, y); ctx.lineTo(x + 4, y); ctx.moveTo(x, y - 4); ctx.lineTo(x, y + 4); ctx.stroke();
+  }
+}
+function drawSim(){
+  const M = SIM.M;
+  for (const p of SIM.parts){
+    if (!p.u || p.u < 0.5) continue;
+    const [x, y] = toS(p.x, p.y), tl = Math.min(60, p.u * 0.9 * sc / 6);
+    const a = Math.min(0.5, 0.06 + p.u / Math.max(S.vmax, 1) * 0.45);
+    const g = ctx.createLinearGradient(x - tl, y, x, y);
+    g.addColorStop(0, "rgba(220,235,255,0)"); g.addColorStop(1, `rgba(220,235,255,${a})`);
+    ctx.strokeStyle = g; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x - tl, y); ctx.lineTo(x, y); ctx.stroke();
+  }
+  const N = SIM.nodes;
+  for (const r of SIM.rods){
+    if (r.broken) continue;
+    const A = N[r.a], B = N[r.b], [ax, ay] = toS(A.x, A.y), [bx, by] = toS(B.x, B.y);
+    const col = rodColor(r.u, r.Ff, M.col);
+    strokeRod(ax, ay, bx, by, col, M.w, r.u > 0.7 ? 14 * Math.min(1, (r.u - 0.7) / 0.3) : 0);
+  }
+  N.forEach(n => {
+    const [x, y] = toS(n.x, n.y);
+    if (n.fixed) drawNode(x, y, true);
+    else { ctx.fillStyle = "#1b2332"; ctx.strokeStyle = "#dfe5ee"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, 3.2, 0, 7); ctx.fill(); ctx.stroke(); }
+  });
+  for (const d of SIM.debris){
+    const [x, y] = toS(d.x, d.y), hl = L / 4 * sc, al = Math.min(1, d.life / 2);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(-d.a); ctx.globalAlpha = al;
+    ctx.strokeStyle = `rgb(${mix(M.col, [120, 90, 70], 0.3)})`; ctx.lineWidth = M.w; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(-hl, 0);
+    if (d.bent) ctx.quadraticCurveTo(0, 0.25 * hl * d.bent, hl, 0); else ctx.lineTo(hl, 0);
+    ctx.stroke(); ctx.restore();
+  }
+  for (const s of SIM.sparks){
+    const [x, y] = toS(s.x, s.y);
+    ctx.strokeStyle = `rgba(255,${160 + 60 * s.life | 0},80,${Math.min(1, s.life * 2)})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - s.vx * 2, y + s.vy * 2); ctx.stroke();
+  }
+}
+let animT = 0, last = 0;
+function draw(){
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  if (backdrop) ctx.drawImage(backdrop, 0, 0, W, H);
+  if (S.phase !== "sim") drawGrid();
+  drawWindsock(animT);
+  drawFoundation();
+  if (S.phase === "build") drawStructureBuild(animT);
+  if (S.phase === "sim" && SIM) drawSim();
+  drawScale();
+}
+function frame(ts){
+  const dtr = last ? Math.min(0.033, (ts - last) / 1000) : 0; last = ts; animT += dtr;
+  if (S.phase === "sim" && SIM){
+    const dt = dtr * (S.slow ? 0.25 : 1);
+    SIM.acc += dt; let n = 0;
+    while (SIM.acc >= H_STEP && n < 120){ simStep(H_STEP); SIM.acc -= H_STEP; n++; }
+    if (n >= 120) SIM.acc = 0;
+    updateFx(dt); updateParticles(dt);
+    if (!SIM.done && SIM.t >= SIM.endT) SIM.done = true;
+    if (ts - SIM.lastStats > 100){ SIM.lastStats = ts; updateStats(); }
+  }
+  draw();
+  requestAnimationFrame(frame);
+}
+
+/* ---------- UI ---------- */
+let toastTimer = null;
+function toast(msg){ const t = $("toast"); t.textContent = msg; t.style.opacity = 1; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.style.opacity = 0, 1800); }
+let hintOverride = null;
+function hint(msg, temp){ if (temp){ hintOverride = msg; setTimeout(() => { hintOverride = null; updateHint(); }, 2200); } updateHint(); }
+function updateHint(){
+  let m = "";
+  if (hintOverride) m = hintOverride;
+  else if (S.phase === "foundation") m = S.poly.length < 3 ? "Klicke Eckpunkte des Fundaments in die Szene." : "Klicke den ersten Punkt erneut oder „Fundament schließen“.";
+  else if (S.phase === "build") m = S.tool === "delete" ? "Klicke auf einen Stab oder Knoten, um ihn zu entfernen." :
+    (S.sel === null ? "Wähle einen gelben Lagerpunkt oder klicke auf eine Fundamentkante." : "Klick setzt einen 2-m-Stab. Grüne Punkte schließen Dreiecke. Esc beendet die Auswahl.");
+  else m = "Der Wind steigt langsam auf das eingestellte Maximum und hält dann mit Böen an.";
+  $("hint").textContent = m;
+}
+function refreshInfo(){
+  const M = MATS[S.mat], mp = matProps(M);
+  $("spec").innerHTML = `Masse je Stab ${fmt(mp.m, 2)} kg<br>Zugtragfähigkeit f<sub>y</sub>A = ${kN(mp.Nt)}<br>` +
+    `Knicklast π²EI/L² = ${kN(mp.Fcr)} · Druck maßgebend ${kN(mp.Nc)}`;
+  const v = S.vmax;
+  $("vmaxTxt").textContent = `${v} m/s · ${Math.round(v * 3.6)} km/h · Bft ${beaufort(v)}`;
+  const free = S.nodes.filter(n => !n.anchor).length;
+  const hmax = S.nodes.reduce((a, n) => Math.max(a, n.y), 0);
+  $("buildInfo").textContent = `${S.rods.length} Stäbe · ${free} freie Knoten · Höhe ${fmt(hmax, 2)} m · Gesamtmasse ${fmt(S.rods.length * mp.m + free * JOINT_M, 0)} kg`;
+  $("go").disabled = !S.rods.length;
+}
+function updateUI(){
+  $("secF").classList.toggle("hidden", S.phase !== "foundation");
+  $("secB").classList.toggle("hidden", S.phase !== "build");
+  $("secS").classList.toggle("hidden", S.phase !== "sim");
+  $("legend").style.display = S.phase === "sim" ? "block" : "none";
+  const idx = {foundation:0, build:1, sim:2}[S.phase];
+  ["st1", "st2", "st3"].forEach((id, i) => { $(id).className = "step" + (i === idx ? " on" : i < idx ? " done" : ""); });
+  $("tBuild").classList.toggle("on", S.tool === "build");
+  $("tDel").classList.toggle("on", S.tool === "delete");
+  cv.style.cursor = S.phase === "sim" ? "default" : "crosshair";
+  if (S.phase === "sim"){ $("res").className = "result"; updateStats(); }
+  updateHint();
+}
+const sel = $("mat");
+for (const [k, M] of Object.entries(MATS)){ const o = document.createElement("option"); o.value = k; o.textContent = M.name; sel.appendChild(o); }
+sel.onchange = () => { S.mat = sel.value; refreshInfo(); };
+$("vmax").oninput = e => { S.vmax = +e.target.value; refreshInfo(); };
+$("snapF").onchange = e => S.snapF = e.target.checked;
+$("snapB").onchange = e => S.snapB = e.target.checked;
+$("slow").onchange = e => S.slow = e.target.checked;
+$("fUndo").onclick = () => S.poly.pop();
+$("fClose").onclick = closePoly;
+$("tBuild").onclick = () => { S.tool = "build"; updateUI(); };
+$("tDel").onclick = () => { S.tool = "delete"; S.sel = null; updateUI(); };
+$("bUndo").onclick = () => undo();
+$("bClear").onclick = () => { pushHist(); S.rods = []; S.nodes = S.nodes.filter(n => n.corner); S.sel = null; refreshInfo(); };
+$("bNewF").onclick = () => { S.poly = []; S.nodes = []; S.rods = []; S.history = []; S.sel = null; S.phase = "foundation"; updateUI(); };
+$("go").onclick = startSim;
+$("sRestart").onclick = startSim;
+$("sBack").onclick = () => { S.phase = "build"; SIM = null; updateUI(); };
+
+window.addEventListener("resize", () => { resize(); if (SIM) initParticles(); });
+resize(); refreshInfo(); updateUI();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
