@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gerüst im Wind</title>
+<title>Fundamente - Das Spiel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -103,7 +103,7 @@ details p{margin:6px 0}
 </head>
 <body>
 <header>
-  <h1><span></span>Gerüst im Wind</h1>
+  <h1><span></span>Fundamente - Das Spiel</h1>
   <div class="steps">
     <div class="step" id="st1">1 Fundament</div>
     <div class="step" id="st2">2 Gerüst</div>
@@ -199,7 +199,6 @@ details p{margin:6px 0}
 const G = 9.81, RHO_AIR = 1.225, L = 2.0, TOL = 0.04, JOINT_M = 1.2;
 const H_STEP = 1 / 2400, ITER = 2, DAMP = 0.5, TAU = 0.03;
 const MATS = {
-  steel48: {name:"Gerüstrohr Stahl Ø48,3×3,2 (S235)", E:210e9, A:4.534e-4, I:1.1586e-7, ft:235e6, fc:235e6, rho:7850, D:0.0483, Cd:1.2, col:[205,213,223], w:4.5},
   alu48:   {name:"Alurohr Ø48,3×4,0 (EN AW-6082 T6)", E:70e9,  A:5.567e-4, I:1.3767e-7, ft:250e6, fc:250e6, rho:2700, D:0.0483, Cd:1.2, col:[228,232,238], w:4.5},
   steel21: {name:"Dünnes Stahlrohr Ø21,3×2,0 (S235)",  E:210e9, A:1.213e-4, I:5.707e-9,  ft:235e6, fc:235e6, rho:7850, D:0.0213, Cd:1.2, col:[190,198,210], w:3},
   wood:    {name:"Holzlatte 40×60 mm (C24)",           E:11e9,  A:2.4e-3,   I:3.2e-7,    ft:14e6,  fc:21e6,  rho:420,  D:0.05,   Cd:2.0, col:[201,150,90],  w:6}
@@ -215,7 +214,7 @@ function beaufort(v){ const t=[0.5,1.6,3.4,5.5,8,10.8,13.9,17.2,20.8,24.5,28.5,3
 /* ---------- Zustand ---------- */
 const S = {phase:"foundation", poly:[], nodes:[], rods:[], sel:null, tool:"build",
   ms:null, mw:null, hover:null, edgeHover:null, preview:null, cands:[], closeHover:false,
-  history:[], snapF:true, snapB:true, mat:"steel48", vmax:45, slow:false};
+  history:[], snapF:true, snapB:true, mat:"wood", vmax:45, slow:false};
 let SIM = null;
 
 /* ---------- Canvas / Ansicht ---------- */
